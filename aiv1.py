@@ -19,7 +19,7 @@ if not API_KEY:
 client = genai.Client(api_key=API_KEY)
 
 # 2. Veritabanı Yönetimi
-DB_NAME = 'apv1.csv'
+DB_NAME = 'aperatif_veritabani.csv'
 
 def veritabanini_yukle():
     if not os.path.exists(DB_NAME):
