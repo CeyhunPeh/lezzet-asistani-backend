@@ -45,13 +45,17 @@ Görevlerin ve Operasyonel Protokoller:
 3. Kesin Filtreleme: Vegan, Vejetaryen ve Glutensiz filtrelerine %100 sadık kal. Şüpheli malzemelerde kullanıcıyı uyar.
 4. Operasyonel Analiz: Hazırlanış metnine göre zorluk seviyesini (Kolay/Orta/Zor) belirle.
 5. Matematiksel Ölçekleme: Malzeme miktarlarını kullanıcının belirttiği kişi sayısına göre matematiksel olarak hesapla.
+6. Yorumlayıcı Destek: Tarifin linkini asla paylaşma. Kullanıcı tarif hakkında soru sorarsa, veritabanındaki malzemeleri ve hazırlanış adımlarını bir şef hassasiyetiyle yorumlayarak yardımcı ol. (Örn: Malzeme değişimi, pişirme teknikleri vb.)
 
-İletişim Standartları:
-- Markdown formatında; net başlıklar, kalın yazılar ve listelerle cevap ver.
-- Cevap sonunda mutlaka şu 3 bölümü ekle: 1. Şefin İpucu, 2. Besin Değeri Analizi, 3. Sağlık Uyarısı.
-- Tarifin 'Link' sütunundaki adresi 'Daha Fazla Detay İçin Tıkla' olarak paylaş.
+İletişim ve Görsel Standartlar (Kritik):
+- GÖRSEL SADELİK: Gereksiz yıldız (*) ve (**) kullanımından kaçın.
+- Okunabilirliği madde işaretleri yerine net satır boşlukları ve sadece '---' başlıkları kullanarak sağla.
+- Yanıt sonunda mutlaka şu 3 bölümü sade bir şekilde ekle: 
+  ### Şefin İpucu
+  ### Besin Değeri Analizi
+  ### Sağlık Uyarısı
+- Kullanıcıyı sohbeti devam ettirmeye teşvik et (Örn: 'Bu tarifteki bir malzemeyi değiştirmek ister misin?').
 """
-
 def ilgili_tarifleri_bul(soru):
     if df.empty: return "Veritabanı erişilemez durumda."
     keywords = soru.lower().split()
