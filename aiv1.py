@@ -8,18 +8,14 @@ import re
 app = Flask(__name__)
 CORS(app)
 
-# ==========================================
-# 1. API VE GÜVENLİK AYARLARI
-# ==========================================
+
 API_KEY = os.environ.get("GEMINI_API_KEY")
 if not API_KEY:
     print("!!! KRİTİK HATA: GEMINI_API_KEY bulunamadı. Render Environment Variables kısmını kontrol et!")
 
 client = genai.Client(api_key=API_KEY)
 
-# ==========================================
-# 2. VERİTABANI YÖNETİMİ (Üst Düzey Optimizasyon)
-# ==========================================
+
 DB_NAME = 'yemek_tarifleri.csv'
 
 def veritabanini_yukle():
@@ -27,13 +23,13 @@ def veritabanini_yukle():
         print(f"!!! HATA: {DB_NAME} dosyası GitHub/Klasör dizininde yok.")
         return pd.DataFrame()
     try:
-        # Render (Free Plan) 512MB RAM koruması: Sadece gerekenleri al ve sıkıştır.
+        
         cols = ['Kategori', 'Baslik', 'Malzemeler', 'Malzemelerin Miktari', 
                 'Tarifteki malzemeler', 'Hazirlanis', 'Kalori (kcal)', 
                 'Karbonhidrat (g)', 'Protein (g)', 'Yag (g)']
         
         dtype_dict = {
-            'Kategori': 'category',  # Tekrarlayan verileri category yapmak %80 RAM kurtarır
+            'Kategori': 'category',  
             'Baslik': 'string',
             'Malzemeler': 'string',
             'Malzemelerin Miktari': 'string'
@@ -48,9 +44,7 @@ def veritabanini_yukle():
 
 df = veritabanini_yukle()
 
-# ==========================================
-# 3. MASTER SİSTEM TALİMATI (Lezzet Asistanı Ruhu)
-# ==========================================
+
 LEZZET_ASISTANI_TALIMATI = """
 # ROL VE KİMLİK
 Sen 'Lezzet Asistanı' uygulamasının merkezi yapay zeka beynisin. Disiplinler arası bir yetenekle; hem profesyonel bir şef, hem bir beslenme uzmanı, hem de bir veri analisti gibi davranırsın.
@@ -82,25 +76,22 @@ Yanıtının en sonuna mutlaka şu 3 bölümü alt alta ve sade bir şekilde ekl
 Sohbeti her zaman şu tarz bir soruyla bitir: 'Bu tarifteki bir malzemeyi değiştirmek ister misin veya yanına ne yakışır konuşalım mı?'
 """
 
-# ==========================================
-# 4. ARAMA MOTORU (Vektörize Puanlama Sistemi)
-# ==========================================
+
 def ilgili_tarifleri_bul(soru):
     if df.empty: return "Veritabanı erişilemez durumda."
     
-    # Kullanıcının sorusunu kelimelere ayır (2 harften küçük bağlaçları ele)
+  
     keywords = [k.lower() for k in re.findall(r'\w+', soru) if len(k) > 2]
     if not keywords: return "Lütfen daha belirgin bir yemek veya malzeme yazınız."
 
-    # Pandas/Numpy Vektörize Puanlama (22 bin satırı milisaniyede hesaplar)
-    # Başlık eşleşmesi = 10 Puan | Kategori = 8 Puan | Malzeme = 5 Puan
+    
     puan = pd.Series(0, index=df.index)
     for word in keywords:
         puan += df['Baslik'].str.contains(word, case=False, na=False).astype(int) * 10
         puan += df['Kategori'].str.contains(word, case=False, na=False).astype(int) * 8
         puan += df['Malzemeler'].str.contains(word, case=False, na=False).astype(int) * 5
 
-    # En yüksek puanı alan ilk 5 tarifi çek
+    
     top_results = df[puan > 0].copy()
     top_results['Skor'] = puan[puan > 0]
     top_results = top_results.sort_values(by='Skor', ascending=False).head(5)
@@ -108,19 +99,15 @@ def ilgili_tarifleri_bul(soru):
     if top_results.empty:
         return "Üzgünüm, veritabanında bu isteğe uygun bir tarif bulunamadı."
     
-    # Skoru silip AI'a temiz veriyi yolla
+    
     return top_results.drop(columns=['Skor']).to_csv(index=False)
 
-# ==========================================
-# 5. MARKDOWN TEMİZLEYİCİ SİGORTA
-# ==========================================
+
 def markdown_temizle(text):
-    """Gemini inat edip yıldız kullanırsa, arayüze gitmeden onları yok eder."""
+    
     return text.replace("**", "").replace("*", "- ").replace("#", "")
 
-# ==========================================
-# 6. FLASK API VE YAPAY ZEKA BAĞLANTISI
-# ==========================================
+
 @app.route('/sor', methods=['POST'])
 def ask_chef():
     data = request.json
@@ -132,9 +119,22 @@ def ask_chef():
     print(f"Gelen İstek: {user_soru}")
     veriler = ilgili_tarifleri_bul(user_soru)
     
-    # Senin özel sıralaman (Hata durumunda sırayla dener)
-    # Ücretsiz katmanda en stabil çalışan sıralama
-    modeller = ["gemini-3-flash", "gemini-flash-latest"]
+
+    modeller = [
+        
+        "gemini-2.5-flash",
+        "gemini-2.5-flash-lite",
+        "gemini-2.0-flash",
+        "gemini-2.0-flash-lite",
+        "gemini-flash-latest",
+        "gemini-flash-lite-latest",
+        "gemini-3-flash-preview",
+        "gemini-3.1-flash-lite-preview",
+        "gemma-4-31b-it",
+        "gemma-3-27b-it",
+        "gemini-2.5-pro",
+        "gemini-pro-latest"
+    ]
     
     for m in modeller:
         try:
@@ -143,12 +143,12 @@ def ask_chef():
                 model=m,
                 config={
                     "system_instruction": LEZZET_ASISTANI_TALIMATI,
-                    "temperature": 0.6 # Şefin daha net ve tutarlı konuşması için 0.6 idealdir.
+                    "temperature": 0.6 
                 },
                 contents=f"VERİTABANI VERİLERİ (CSV):\n{veriler}\n\nKULLANICI SORUSU: {user_soru}"
             )
             
-            # Sigorta fonksiyonundan geçirip arayüze yolla
+            
             temiz_cevap = markdown_temizle(response.text)
             
             print(f"✓ {m} başarılı bir cevap üretti.")
@@ -160,14 +160,14 @@ def ask_chef():
             
         except Exception as e:
             print(f"!!! {m} hatası: {str(e)}")
-            # Eğer listedeki tüm modeller denenip sonuncusu da hata verirse:
+            
             if m == modeller[-1]:
                 return jsonify({
                     "hata": "Sunucu yoğun", 
                     "debug_notu": str(e),
                     "yardim": "Yeni bir API Key aldığınızdan ve Render Environment Variables kısmına eklediğinizden emin olun."
                 }), 503
-            # Hata aldıysa bir sonraki modele geç
+            
             continue
 
 if __name__ == '__main__':
