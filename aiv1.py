@@ -134,7 +134,7 @@ def ask_chef():
     
     # Senin özel sıralaman (Hata durumunda sırayla dener)
     # Ücretsiz katmanda en stabil çalışan sıralama
-    modeller = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-flash-latest"]
+    modeller = ["gemini-3-flash", "gemini-flash-latest"]
     
     for m in modeller:
         try:
