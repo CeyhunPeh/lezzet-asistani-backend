@@ -133,7 +133,8 @@ def ask_chef():
     veriler = ilgili_tarifleri_bul(user_soru)
     
     # Senin özel sıralaman (Hata durumunda sırayla dener)
-    modeller = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-flash-latest"]
+    # Ücretsiz katmanda en stabil çalışan sıralama
+    modeller = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-flash-latest"]
     
     for m in modeller:
         try:
