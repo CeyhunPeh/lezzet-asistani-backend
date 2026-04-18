@@ -205,3 +205,19 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# ========================================================
+# PROJE ÖZEL İZOLASYON KURALLARI (MÜŞTERİ VERİLERİ & LOGLAR)
+# ========================================================
+
+# Ana Veritabanı ve Kritik Dosyalar (Açık kaynak yapılmamalı)
+*.csv
+yemek_tarifleri.csv
+kategorize_edilmis_linkler.csv
+
+# Sistem Logları ve Geçici Dosyalar
+islenen_linkler_log.txt
+*.log
+
+# İsteğe Bağlı: Bilgilendirme raporunu (vitrin dosyası) hariç tutmak istersen başındaki # işaretini kaldır:
+ !veritabani_bilgilendirme.txt
