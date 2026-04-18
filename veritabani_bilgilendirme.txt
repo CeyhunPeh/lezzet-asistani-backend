@@ -1,0 +1,29 @@
+--- VERİTABANI KATEGORİ ANALİZ RAPORU ---
+=========================================
+
+KATEGORİ ADI                   | TARİF SAYISI
+-----------------------------------------------
+Aperatifler                    | 1.155
+Bakliyat Yemekleri             | 1.144
+Bebekler İçin                  | 1.141
+Diyet                          | 1.021
+Diğer Tarifler                 | 1.105
+Dolma Sarma Tarifleri          | 923
+Et Yemekleri                   | 1.025
+Hamurişi Tarifleri             | 934
+Hızlı Yemekler                 | 940
+Kahvaltılık Tarifleri          | 965
+Kurabiye Tarifleri             | 1.022
+Makarna Tarifleri              | 987
+Pilav Tarifleri                | 912
+Salata Meze Kanepe             | 927
+Sandviç Tarifleri              | 614
+Sebze Yemekleri                | 788
+Tatlı Tarifleri                | 961
+Yumurta Yemekleri              | 906
+Çocuk Yemekleri                | 1.030
+Çorba Tarifleri                | 1.093
+İçecek Tarifleri               | 928
+-----------------------------------------------
+TOPLAM BENZERSİZ TARİF SAYISI : 20.521
+=========================================
