@@ -11,6 +11,7 @@ app = Flask(__name__)
 CORS(app)
 
 
+
 API_KEY = os.environ.get("GEMINI_API_KEY")
 if not API_KEY:
     print("!!! KRİTİK HATA: GEMINI_API_KEY bulunamadı. Render Environment Variables kısmını kontrol et!")
@@ -18,16 +19,14 @@ if not API_KEY:
 client = genai.Client(api_key=API_KEY)
 
 
-# === DÜZENLENEN KISIM BAŞLANGICI (BULUT VERİTABANI BAĞLANTISI) ===
-# Bilgisayarında test ederken .env dosyasını okur, Render'a yüklendiğinde ise
-# şifreyi otomatik olarak Render'ın Environment Variables kasasından çeker.
+
 load_dotenv(override=True)
 DB_URL = os.environ.get("DATABASE_URL")
 
 if DB_URL and DB_URL.startswith("postgres://"):
     DB_URL = DB_URL.replace("postgres://", "postgresql://", 1)
 
-# Veritabanı motorunu çalıştır
+
 engine = create_engine(DB_URL) if DB_URL else None
 
 def veritabanini_yukle():
@@ -54,7 +53,7 @@ def veritabanini_yukle():
         return pd.DataFrame()
 
 df = veritabanini_yukle()
-# === DÜZENLENEN KISIM BİTİŞİ ===
+
 
 
 LEZZET_ASISTANI_TALIMATI = """
@@ -190,6 +189,11 @@ def ask_chef():
                 }), 503
             
             continue
+        
+@app.route('/', methods=['GET'])
+def uyanik_kal():
+    
+    return "Lezzet Asistanı 7/24 Uyanık ve Görev Başında!", 200
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
