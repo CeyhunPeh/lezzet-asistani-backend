@@ -4,6 +4,8 @@ from google import genai
 import pandas as pd
 import os
 import re
+from sqlalchemy import create_engine
+from dotenv import load_dotenv
 
 app = Flask(__name__)
 CORS(app)
@@ -16,26 +18,35 @@ if not API_KEY:
 client = genai.Client(api_key=API_KEY)
 
 
-DB_NAME = 'yemek_tarifleri.csv'
+# === DÜZENLENEN KISIM BAŞLANGICI (BULUT VERİTABANI BAĞLANTISI) ===
+# Bilgisayarında test ederken .env dosyasını okur, Render'a yüklendiğinde ise
+# şifreyi otomatik olarak Render'ın Environment Variables kasasından çeker.
+load_dotenv(override=True)
+DB_URL = os.environ.get("DATABASE_URL")
+
+if DB_URL and DB_URL.startswith("postgres://"):
+    DB_URL = DB_URL.replace("postgres://", "postgresql://", 1)
+
+# Veritabanı motorunu çalıştır
+engine = create_engine(DB_URL) if DB_URL else None
 
 def veritabanini_yukle():
-    if not os.path.exists(DB_NAME):
-        print(f"!!! HATA: {DB_NAME} dosyası GitHub/Klasör dizininde yok.")
+    if not engine:
+        print("!!! HATA: DATABASE_URL bulunamadı. Render Environment Variables kısmına Neon linkini ekle!")
         return pd.DataFrame()
+    
     try:
+        print("🧠 Lezzet Asistanı hafızasını buluttan indiriyor...")
+        # Tüm veriyi Neon bulutundan çek
+        data = pd.read_sql("SELECT * FROM tarifler", engine)
         
-        cols = ['Kategori', 'Baslik', 'Malzemeler', 'Malzemelerin Miktari', 
-                'Tarifteki malzemeler', 'Hazirlanis', 'Kalori (kcal)', 
-                'Karbonhidrat (g)', 'Protein (g)', 'Yag (g)']
-        
-        dtype_dict = {
-            'Kategori': 'category',  
-            'Baslik': 'string',
-            'Malzemeler': 'string',
-            'Malzemelerin Miktari': 'string'
-        }
-        
-        data = pd.read_csv(DB_NAME, usecols=cols, dtype=dtype_dict, encoding="utf-8-sig")
+        # Orijinal kodundaki bellek optimizasyonlarını (kategori ve string atamalarını) koruyoruz
+        if 'Kategori' in data.columns:
+            data['Kategori'] = data['Kategori'].astype('category')
+        for col in ['Baslik', 'Malzemeler', 'Malzemelerin Miktari']:
+            if col in data.columns:
+                data[col] = data[col].astype('string')
+                
         print(f"--- SİSTEM AKTİF: {len(data)} Tarif Başarıyla Belleğe Alındı ---")
         return data
     except Exception as e:
@@ -43,6 +54,7 @@ def veritabanini_yukle():
         return pd.DataFrame()
 
 df = veritabanini_yukle()
+# === DÜZENLENEN KISIM BİTİŞİ ===
 
 
 LEZZET_ASISTANI_TALIMATI = """
