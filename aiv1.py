@@ -65,17 +65,17 @@ VERİ SADAKATİ: Sadece sana sağlanan veritabanındaki gerçek tarifleri sunmal
 VERİTABANI YAPISI VE GÖREV DAĞILIMI
 Sana iletilen 'VERİTABANI' bloğunu şu mantıkla işle:
     
-Kategori: Yemeğin türü (Çorba, Tatlı vb.)
+Kategori: Arama motorunun "Grup" merkezidir. Kullanıcı 'et yemeği', 'sebze yemeği', 'tatlılar' gibi genel bir mutfak grubu sorduğunda ilk olarak bu sütundaki verilere bak ve eşleşen tarifleri seç.
 
-Malzemeler: Arama motorunun kalbi burasıdır. Kullanıcının aradığı besin adlarını (Örn: patates, tavuk) sadece bu sütunda tara.
+Malzemeler: Arama motorunun "İçerik" merkezidir. Kullanıcının aradığı spesifik besin adlarını (Örn: patates, tavuk, kıyma) bu sütunda tara.
 
-Malzemelerin Miktari: Sadece ölçü verilerini içerir (Örn: 1 çay bardağı, 200 gram). Matematiksel ölçekleme (kişi sayısı hesabı) yaparken sadece bu sütunu baz al.
+Malzemelerin Miktari: Sadece ölçü ve birim verilerini içerir (Örn: 1 çay bardağı, 200 gram). Matematiksel ölçekleme (kişi sayısı hesabı) yaparken sadece bu sütunu baz al.
 
-Tarifteki malzemeler: Miktar ve besin adının birleşimidir. Kullanıcıya malzeme listesini sunarken bu sütunu kullan.
+Tarifteki malzemeler: Miktar ve besin adının birleşmiş halidir (Örn: 2 adet orta boy patates). Kullanıcıya sunacağın malzeme listesini hazırlarken bu sütunu kullan.
 
-Hazirlanis: Adım adım yapılış süreci.
+Hazirlanis: Yemeğin pişirilme sürecini içeren adım adım talimatlardır.
 
-Kalori (kcal), Karbonhidrat (g), Protein (g), Yag (g): Besin değerleri.
+Besin Değerleri: Kalori (kcal), Karbonhidrat (g), Protein (g), Yag (g) verilerini ilgili sütunlardan çek.
 
 EKSİK VERİ YÖNETİMİ: Besin değerleri (Kalori vb.) '0' veya boş ise, malzemelere bakarak yaklaşık tahmin yap ve yanına mutlaka '(Tahmini değerdir)' notunu ekle.
 
@@ -111,27 +111,19 @@ Sohbeti her zaman ürettiğin cevabın içeriğine uygun, diyaloğu devam ettire
 def ilgili_tarifleri_bul(soru):
     if df.empty: return "Veritabanı erişilemez durumda."
     
-  
-    keywords = [k.lower() for k in re.findall(r'\w+', soru) if len(k) > 2]
-    if not keywords: return "Lütfen daha belirgin bir yemek veya malzeme yazınız."
-
+    keywords = soru.lower().split()
     
-    puan = pd.Series(0, index=df.index)
-    for word in keywords:
-        puan += df['Baslik'].str.contains(word, case=False, na=False).astype(int) * 10
-        puan += df['Kategori'].str.contains(word, case=False, na=False).astype(int) * 8
-        puan += df['Malzemeler'].str.contains(word, case=False, na=False).astype(int) * 5
-
+    # ARAMA MOTORU GÜNCELLEMESİ: Kategori sütunu eklendi
+    mask = df['Baslik'].str.contains('|'.join(keywords), case=False, na=False) | \
+           df['Malzemeler'].str.contains('|'.join(keywords), case=False, na=False) | \
+           df['Kategori'].str.contains('|'.join(keywords), case=False, na=False)
     
-    top_results = df[puan > 0].copy()
-    top_results['Skor'] = puan[puan > 0]
-    top_results = top_results.sort_values(by='Skor', ascending=False).head(5)
+    filtered_df = df[mask].head(10) # Kategori aramalarında daha fazla seçenek sunması için 10 yaptık
     
-    if top_results.empty:
-        return "Üzgünüm, veritabanında bu isteğe uygun bir tarif bulunamadı."
-    
-    
-    return top_results.drop(columns=['Skor']).to_csv(index=False)
+    if filtered_df.empty:
+        return "UYARI: Veritabanında bu aramayla ilgili tarif bulunamadı. Genel mutfak bilgini kullan."
+        
+    return filtered_df.to_csv(index=False)
 
 
 def markdown_temizle(text):
