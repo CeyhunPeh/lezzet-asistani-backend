@@ -82,32 +82,32 @@ Her cevabı bağlama uygun, doğal bir soruyla bitir. (Örn: Yanına ne pişirel
 """
 
 def ilgili_tarifleri_bul(soru):
-    if df.empty: return "VERİTABANI_ERİŞİM_HATASI"
+    if df.empty: return "VERITABANI_BOS"
     
     soru_temiz = soru.lower().strip()
-    # Selamlaşma kontrolü
+    
+    # Selamlaşma kontrolü - Eğer kullanıcı sadece selam verdiyse veri aramaya gerek yok
     selamlar = ['selam', 'merhaba', 'meraba', 'naber', 'hi', 'hello', 'tombik', 'şef']
     if any(s == soru_temiz for s in selamlar) or len(soru_temiz) < 3:
-        return "GREETING_MODE: Kullanıcı selam verdi, ona Tombik Şef olarak sıcak bir karşılama yap."
+        return "SELAMLASMA_MODU"
 
     keywords = soru_temiz.split()
     
-    # 1. KATEGORİ ÖNCELİĞİ (Et yemeği vb. aramalar için)
-    # Kategori sütununda birebir veya kısmi eşleşme ara
+    # 1. KATEGORİ ÖNCELİĞİ: "Et yemeği", "Tatlı" gibi aramalar için
     kategori_mask = df['Kategori'].str.contains(soru_temiz, case=False, na=False)
     kategori_sonuclari = df[kategori_mask]
 
-    # 2. BAŞLIK VE MALZEME ARAMASI
+    # 2. GENEL ARAMA: Başlık ve Malzemeler
     genel_mask = df['Baslik'].str.contains('|'.join(keywords), case=False, na=False) | \
                  df['Malzemeler'].str.contains('|'.join(keywords), case=False, na=False)
     genel_sonuclar = df[genel_mask]
 
-    # 3. HİYERARŞİK BİRLEŞTİRME
-    # Önce kategori sonuçlarını, sonra genel sonuçları koyuyoruz
+    # 3. BİRLEŞTİRME: Kategori eşleşenleri her zaman en üste koy
     final_df = pd.concat([kategori_sonuclari, genel_sonuclar]).drop_duplicates().head(20)
     
     if final_df.empty:
-        return "UYARI: Veritabanında tam sonuç yok, kullanıcının talebine yakın genel öneriler yap."
+        # Burası kritik: Boş dönerse Gemini'ye "yok" deme, "bulamadık ama sen uydurma" de
+        return "ARAMA_SONUCU_BOS: Veritabanında tam eşleşme yok. Kullanıcıyı elindeki kategorilere göre yönlendir."
         
     return final_df.to_csv(index=False)
 
