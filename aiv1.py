@@ -84,13 +84,10 @@ Her cevabı bağlama uygun, doğal bir soruyla bitir. (Örn: Yanına ne pişirel
 def ilgili_tarifleri_bul(soru):
     if df.empty: return "VERITABANI_BOS"
     
+    soru_temiz = soru.lower().strip()
     
-    soru = soru.lower().replace("yemeği", "").replace("yemekleri", "").replace("tarifleri", "").strip()
-    keywords = [k for k in soru.split() if len(k) > 1] 
+    keywords = soru_temiz.split()
     
-    if not keywords:
-        return "GREETING_MODE"
-
     kategori_mask = df['Kategori'].str.contains('|'.join(keywords), case=False, na=False)
     kategori_sonuclari = df[kategori_mask]
 
@@ -99,10 +96,11 @@ def ilgili_tarifleri_bul(soru):
                  df['Malzemeler'].str.contains('|'.join(keywords), case=False, na=False)
     genel_sonuclar = df[genel_mask]
 
-    final_df = pd.concat([kategori_sonuclari, genel_sonuclar]).drop_duplicates().head(20)
+    
+    final_df = pd.concat([kategori_sonuclari, genel_sonuclar]).drop_duplicates().head(15)
     
     if final_df.empty:
-        return "UYARI: Veritabanında tam eşleşme yok. Genel mutfak bilginle yardımcı ol."
+        return "UYARI: Veritabanında tam eşleşme yok. Genel bilginle yardımcı ol."
         
     return final_df.to_csv(index=False)
 
@@ -115,13 +113,20 @@ def markdown_temizle(text):
 @app.route('/sor', methods=['POST'])
 def ask_chef():
     data = request.json
-    user_soru = data.get('soru', '')
+    user_soru = data.get('soru', '').strip()
     
     if not user_soru:
-        return jsonify({"hata": "Lütfen bir soru sorunuz.", "durum": "hata"}), 400
+        return jsonify({"hata": "Bir şey yazmadın evlat!"}), 400
 
-    print(f"Gelen İstek: {user_soru}")
-    veriler = ilgili_tarifleri_bul(user_soru)
+    
+    selam_kelimeleri = ['selam', 'merhaba', 'meraba', 'naber', 'iyi akşamlar', 'tünaydın', 'hey', 'tombik şef']
+    is_greeting = any(s in user_soru.lower() for s in selam_kelimeleri) and len(user_soru.split()) < 3
+
+    if is_greeting:
+        veriler = "KULLANICI SELAM VERDİ. Henüz bir yemek sormadı. Onu Tombik Şef olarak samimi bir şekilde karşıla."
+    else:
+        
+        veriler = ilgili_tarifleri_bul(user_soru)
     
 
     modeller = [
