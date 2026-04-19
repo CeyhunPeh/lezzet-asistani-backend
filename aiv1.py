@@ -86,23 +86,26 @@ def ilgili_tarifleri_bul(soru):
     
     soru_temiz = soru.lower().strip()
     
-    keywords = soru_temiz.split()
+    keywords = [k for k in soru_temiz.split() if len(k) > 1]
     
+    # Önce KATEGORİ sütununda arama yapıyoruz
     kategori_mask = df['Kategori'].str.contains('|'.join(keywords), case=False, na=False)
     kategori_sonuclari = df[kategori_mask]
 
     
-    genel_mask = df['Baslik'].str.contains('|'.join(keywords), case=False, na=False) | \
-                 df['Malzemeler'].str.contains('|'.join(keywords), case=False, na=False)
-    genel_sonuclar = df[genel_mask]
+    if not kategori_sonuclari.empty:
+        
+        return kategori_sonuclari.sample(min(len(kategori_sonuclari), 15)).to_csv(index=False)
 
     
-    final_df = pd.concat([kategori_sonuclari, genel_sonuclar]).drop_duplicates().head(15)
-    
-    if final_df.empty:
-        return "UYARI: Veritabanında tam eşleşme yok. Genel bilginle yardımcı ol."
+    genel_mask = df['Baslik'].str.contains('|'.join(keywords), case=False, na=False) | \
+                 df['Malzemeler'].str.contains('|'.join(keywords), case=False, na=False)
+    genel_sonuclar = df[genel_mask].head(15)
+
+    if genel_sonuclar.empty:
+        return "UYARI: Tam eşleşme yok. Elindeki kategorileri hatırlat ve genel şef bilgini konuştur."
         
-    return final_df.to_csv(index=False)
+    return genel_sonuclar.to_csv(index=False)
 
 
 def markdown_temizle(text):
