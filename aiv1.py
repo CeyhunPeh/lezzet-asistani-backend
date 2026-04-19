@@ -85,6 +85,11 @@ MATEMATİKSEL ÖLÇEKLEME: Kullanıcı kişi sayısı belirtirse, 'Malzemelerin 
 
 YORUMLAYICI DESTEK: Tarifin linkini ASLA paylaşma. Veritabanındaki 'Kategori', 'Malzemeler' ve 'Hazirlanis' sütunlarını harmanlayarak bir şef hassasiyetiyle, adım adım ve anlaşılır bir dille yorumla.
 
+VERİ KISITI YÖNETİMİ (ÖNEMLİ)
+Sana gönderilen 'VERİTABANI' bloğu, devasa veritabanımızdan yapılan bir aramanın sadece ilk birkaç sonucudur. 
+EĞER gelen verilerde kullanıcının istediği spesifik yemek (örn: et yemeği) azsa veya yoksa, ASLA 'veritabanında sadece aperatifler var' gibi yanlış bir bilgi verme. 
+Bunun yerine, elindeki kısıtlı veriyi en iyi şekilde yorumla veya 'Şu an elimdeki seçenekler bunlar, ama istersen başka bir malzeme ile arama yapabiliriz' diyerek kullanıcıyı yönlendir.
+
 İLETİŞİM VE GÖRSEL STANDARTLAR (ÇOK KRİTİK)
 MARKDOWN YASAK: Cevaplarında yıldız, çift yıldız veya kare işaretlerini KESİNLİKLE kullanma. Hiçbir metni kalın veya italik yapma.
 
@@ -111,19 +116,28 @@ Sohbeti her zaman ürettiğin cevabın içeriğine uygun, diyaloğu devam ettire
 def ilgili_tarifleri_bul(soru):
     if df.empty: return "Veritabanı erişilemez durumda."
     
-    keywords = soru.lower().split()
+    # Soruyu küçük harfe çevir ve temizle
+    soru_temiz = soru.lower()
+    keywords = soru_temiz.split()
     
-    # ARAMA MOTORU GÜNCELLEMESİ: Kategori sütunu eklendi
-    mask = df['Baslik'].str.contains('|'.join(keywords), case=False, na=False) | \
-           df['Malzemeler'].str.contains('|'.join(keywords), case=False, na=False) | \
-           df['Kategori'].str.contains('|'.join(keywords), case=False, na=False)
+    # 1. ADIM: Kategori araması (En yüksek öncelik)
+    # Eğer kullanıcı 'et', 'tavuk', 'tatlı' gibi bir kategori ismi vermişse onları öne al
+    kategori_mask = df['Kategori'].str.contains(soru_temiz, case=False, na=False)
+    kategori_sonuclari = df[kategori_mask]
     
-    filtered_df = df[mask].head(10) # Kategori aramalarında daha fazla seçenek sunması için 10 yaptık
+    # 2. ADIM: Genel anahtar kelime araması (Başlık ve Malzemeler)
+    genel_mask = df['Baslik'].str.contains('|'.join(keywords), case=False, na=False) | \
+                 df['Malzemeler'].str.contains('|'.join(keywords), case=False, na=False)
+    genel_sonuclar = df[genel_mask]
     
-    if filtered_df.empty:
-        return "UYARI: Veritabanında bu aramayla ilgili tarif bulunamadı. Genel mutfak bilgini kullan."
+    # 3. ADIM: Sonuçları birleştir ve Kategori eşleşenleri en üste koy
+    # Kategori sonuçlarını en başa alıyoruz ki AI önce onları görsün
+    final_df = pd.concat([kategori_sonuclari, genel_sonuclar]).drop_duplicates().head(15)
+    
+    if final_df.empty:
+        return "UYARI: Veritabanında tam eşleşme bulunamadı. Genel mutfak bilginle yardımcı ol."
         
-    return filtered_df.to_csv(index=False)
+    return final_df.to_csv(index=False)
 
 
 def markdown_temizle(text):
