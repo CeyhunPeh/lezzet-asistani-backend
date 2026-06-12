@@ -1,7 +1,7 @@
 flask
 flask-cors
 pandas
-google-genai
+google-generativeai
 gunicorn
 SQLAlchemy
 psycopg2-binary

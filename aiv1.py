@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from google import genai
+import google.generativeai as genai
 import pandas as pd
 import os
 import re
@@ -10,17 +10,17 @@ from dotenv import load_dotenv
 app = Flask(__name__)
 CORS(app)
 
-
+load_dotenv(override=True)
 
 API_KEY = os.environ.get("GEMINI_API_KEY")
 if not API_KEY:
     print("!!! KRİTİK HATA: GEMINI_API_KEY bulunamadı. Render Environment Variables kısmını kontrol et!")
 
-client = genai.Client(api_key=API_KEY)
+genai.configure(api_key=API_KEY)
 
 
 
-load_dotenv(override=True)
+
 DB_URL = os.environ.get("DATABASE_URL")
 
 if DB_URL and DB_URL.startswith("postgres://"):
@@ -153,15 +153,17 @@ def ask_chef():
     for m in modeller:
         try:
             print(f"--> {m} modeli ile iletişim kuruluyor...")
-            response = client.models.generate_content(
-                model=m,
-                config={
-                    "system_instruction": LEZZET_ASISTANI_TALIMATI,
-                    "temperature": 0.6 
-                },
-                contents=f"VERİTABANI VERİLERİ (CSV):\n{veriler}\n\nKULLANICI SORUSU: {user_soru}"
+            
+            # <-- DEĞİŞTİ: Model nesnesi oluşturma ve generate_content çağrısı eski SDK'ye uyarlandı
+            model = genai.GenerativeModel(
+                model_name=m,
+                system_instruction=LEZZET_ASISTANI_TALIMATI
             )
             
+            response = model.generate_content(
+                f"VERİTABANI VERİLERİ (CSV):\n{veriler}\n\nKULLANICI SORUSU: {user_soru}",
+                generation_config={"temperature": 0.6}
+            )
             
             temiz_cevap = markdown_temizle(response.text)
             
